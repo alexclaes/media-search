@@ -22,6 +22,15 @@ const photographers = [
   'IMAGO / teutopress',
 ];
 
+const formatDate = (date: string) => {
+  return new Date(date).toLocaleDateString("de-DE", {
+    weekday: "short",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  })
+}
+
 export default function Search() {
   const [query, setQuery] = useState('');
   const [submittedQuery, setSubmittedQuery] = useState<string | null>(null);
@@ -132,7 +141,9 @@ export default function Search() {
           <li key={item.id}>
             <p><span className="font-bold">Bildnummer:</span> {item.id}</p>
             <p><span className="font-bold">Fotografen:</span> {item.photographer}</p>
-            <p><span className="font-bold">datum:</span> {item.date}</p>
+            <p><span className="font-bold">Datum:</span>
+              <time dateTime={item.date}>{formatDate(item.date)}</time>
+            </p>
             <p><span className="font-bold">Breite x Höhe:</span> {item.width}x{item.height}</p>
             <p><span className="font-bold">Suchtext:</span> {item.searchText}</p>
             <p><span className="font-bold">Score:</span> {item._score}</p>
