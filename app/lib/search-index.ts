@@ -19,6 +19,10 @@ const FIELD_WEIGHTS = {
 
 type IndexedField = keyof typeof FIELD_WEIGHTS;
 
+// ---------------------------------------------------------------------------------------------------------------------
+// Relevant for build time (once, when building)
+// ---------------------------------------------------------------------------------------------------------------------
+
 // Type assertion for imported JSON
 const rawMedia = mediaData as RawMediaItem[];
 
@@ -49,6 +53,28 @@ function buildIndex(): TokenMap {
 
   return index;
 }
+
+function buildAllTokens() {
+  const tokens = new Set<string>();
+  for (const field of Object.keys(FIELD_WEIGHTS) as IndexedField[]) {
+    for (const token of Object.keys(index[field])) {
+      tokens.add(token);
+    }
+  }
+
+  return [...tokens];
+}
+
+
+// Build index at startup
+export const index = buildIndex();
+
+// Build an array containing all tokens at startup (for substring matching)
+const allTokens = buildAllTokens();
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Relevant for run time (on every search request)
+// ---------------------------------------------------------------------------------------------------------------------
 
 function toMediaItem(raw: RawMediaItem, score: number): MediaItem {
   return {
@@ -89,24 +115,6 @@ function getDocsForTokens(tokens: string[]): Set<number> {
   return docs;
 }
 
-
-// Build index at startup
-export const index = buildIndex();
-
-
-function buildAllTokens() {
-  const tokens = new Set<string>();
-  for (const field of Object.keys(FIELD_WEIGHTS) as IndexedField[]) {
-    for (const token of Object.keys(index[field])) {
-      tokens.add(token);
-    }
-  }
-
-  return [...tokens]
-}
-
-// Build an array containing all tokens at startup
-const allTokens = buildAllTokens();
 
 export function search(query: string): MediaItem[] {
   const tokens = tokenize(query);
@@ -151,11 +159,13 @@ export function search(query: string): MediaItem[] {
   }
 
   /*
-   * Step 3: Sort by score descending (and convert to MediaItem)
+   * Step 3: Sort by score descending
    */
   const results = [...scores.entries()]
     .sort((a, b) => b[1] - a[1])
-    .map(([docId, score]) => toMediaItem(rawMedia[docId], score));
 
-  return results;
+  /*
+   * Step 4: Convert to data structure
+   */
+  return results.map(([docId, score]) => toMediaItem(rawMedia[docId], score));
 }
