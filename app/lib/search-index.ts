@@ -11,13 +11,13 @@ export interface TokenMap {
   bildnummer: FieldIndex;
 }
 
-const indexedFields = [
-  'suchtext',
-  'fotografen',
-  'bildnummer',
-] as const
+const FIELD_WEIGHTS = {
+  suchtext: 1.0,
+  fotografen: 0.5,
+  bildnummer: 0.3
+} as const;
 
-type IndexedField = typeof indexedFields[number];
+type IndexedField = keyof typeof FIELD_WEIGHTS;
 
 // Type assertion for imported JSON
 const rawMedia = mediaData as RawMediaItem[];
@@ -79,7 +79,7 @@ function calculateIDF(field: IndexedField, token: string): number {
  */
 function getDocsForToken(token: string): Set<number> {
   const docs = new Set<number>();
-  for (const field of indexedFields) {
+  for (const field of Object.keys(FIELD_WEIGHTS) as IndexedField[]) {
     const fieldDocs = index[field][token] || [];
     for (const docId of fieldDocs) {
       docs.add(docId);
@@ -111,17 +111,18 @@ export function search(query: string): MediaItem[] {
 
   /*
    * Step 2: Calculate IDF score for each matching doc
-   * Score = sum of IDF for each token/field match
+   * Multiply IDF by weight based on field containing the token
+   * Score = sum of (IDF * fieldWeight) for each token/field match
    */
   const scores = new Map<number, number>();
 
   for (const docId of resultSet) {
     let score = 0;
     for (const token of tokens) {
-      for (const field of indexedFields) {
+      for (const field of Object.keys(FIELD_WEIGHTS) as IndexedField[]) {
         const fieldDocs = index[field][token] || [];
         if (fieldDocs.includes(docId)) {
-          score += calculateIDF(field, token);
+          score += calculateIDF(field, token) * FIELD_WEIGHTS[field];
         }
       }
     }
