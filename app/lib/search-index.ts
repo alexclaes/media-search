@@ -75,21 +75,38 @@ function calculateIDF(field: IndexedField, token: string): number {
 }
 
 /**
- * Get all doc IDs that contain a token in any indexed field
+ * Get all docs that contain a token in any indexed field
  */
-function getDocsForToken(token: string): Set<number> {
+function getDocsForTokens(tokens: string[]): Set<number> {
   const docs = new Set<number>();
-  for (const field of Object.keys(FIELD_WEIGHTS) as IndexedField[]) {
-    const fieldDocs = index[field][token] || [];
-    for (const docId of fieldDocs) {
-      docs.add(docId);
+  for (const token of tokens) {
+    for (const field of Object.keys(FIELD_WEIGHTS) as IndexedField[]) {
+      for (const docId of (index[field][token] || [])) {
+        docs.add(docId);
+      }
     }
   }
   return docs;
 }
 
+
 // Build index at startup
 export const index = buildIndex();
+
+
+function buildAllTokens() {
+  const tokens = new Set<string>();
+  for (const field of Object.keys(FIELD_WEIGHTS) as IndexedField[]) {
+    for (const token of Object.keys(index[field])) {
+      tokens.add(token);
+    }
+  }
+
+  return [...tokens]
+}
+
+// Build an array containing all tokens at startup
+const allTokens = buildAllTokens();
 
 export function search(query: string): MediaItem[] {
   const tokens = tokenize(query);
@@ -97,15 +114,18 @@ export function search(query: string): MediaItem[] {
     return [];
   }
 
+  // Find all tokens that contain the given substring
+  const matches = tokens.map(t => allTokens.filter(token => token.includes(t)));
+
   /*
    * Step 1: Find docs containing ALL tokens (in any field)
    */
   // Get all docs containing the first token
-  let resultSet = getDocsForToken(tokens[0]);
+  let resultSet = getDocsForTokens(matches[0]);
 
   // Intersect with remaining tokens (AND logic)
-  for (let i = 1; i < tokens.length; i++) {
-    const tokenDocs = getDocsForToken(tokens[i]);
+  for (let i = 1; i < matches.length; i++) {
+    const tokenDocs = getDocsForTokens(matches[i]);
     resultSet = new Set([...resultSet].filter(id => tokenDocs.has(id)));
   }
 
@@ -114,11 +134,12 @@ export function search(query: string): MediaItem[] {
    * Multiply IDF by weight based on field containing the token
    * Score = sum of (IDF * fieldWeight) for each token/field match
    */
+  const allMatchedTokens = [...new Set(matches.flat())];
   const scores = new Map<number, number>();
 
   for (const docId of resultSet) {
     let score = 0;
-    for (const token of tokens) {
+    for (const token of allMatchedTokens) {
       for (const field of Object.keys(FIELD_WEIGHTS) as IndexedField[]) {
         const fieldDocs = index[field][token] || [];
         if (fieldDocs.includes(docId)) {
