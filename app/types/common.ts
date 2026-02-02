@@ -1,0 +1,1 @@
+export type SortByParameter = 'score' | 'date_asc' | 'date_desc';

@@ -2,6 +2,7 @@
 
 import {useState, useEffect} from 'react';
 import {MediaItem, SearchResponse} from '@/app/types/media';
+import {SortByParameter} from "@/app/types/common";
 
 // For the sake of this demo we store all photographers hardcoded in the UI
 const photographers = [
@@ -44,6 +45,7 @@ export default function Search() {
   const [photographer, setPhotographer] = useState('');
   const [dateStart, setDateStart] = useState('');
   const [dateEnd, setDateEnd] = useState('');
+  const [sortBy, setSortBy] = useState<SortByParameter>('score');
 
 
   useEffect(() => {
@@ -69,6 +71,9 @@ export default function Search() {
         if (dateEnd) {
           url += `&dateEnd=${encodeURIComponent(dateEnd)}`;
         }
+        if (sortBy !== 'score') {
+          url += `&sortBy=${encodeURIComponent(sortBy)}`;
+        }
         const response = await fetch(url);
 
         if (!response.ok) {
@@ -87,7 +92,7 @@ export default function Search() {
     }
 
     performSearch();
-  }, [submittedQuery, page, pageSize, photographer, dateStart, dateEnd]);
+  }, [submittedQuery, page, pageSize, photographer, dateStart, dateEnd, sortBy]);
 
   function handleSearch() {
     setSubmittedQuery(query);
@@ -107,6 +112,11 @@ export default function Search() {
   function handleDateChange(start: string, end: string) {
     setDateStart(start);
     setDateEnd(end);
+    setPage(1);
+  }
+
+  function handleSortChange(newSort: SortByParameter) {
+    setSortBy(newSort);
     setPage(1);
   }
 
@@ -140,6 +150,15 @@ export default function Search() {
           onChange={(e) => handleDateChange(dateStart, e.target.value)}
           disabled={loading}
         />
+        <select
+          value={sortBy}
+          onChange={(e) => handleSortChange(e.target.value as SortByParameter)}
+          disabled={loading}
+        >
+          <option value="score">Sortieren nach Relevanz</option>
+          <option value="date_desc">Neueste zuerst</option>
+          <option value="date_asc">Älteste zuerst</option>
+        </select>
         <select
           value={pageSize}
           onChange={(e) => handlePageSizeChange(Number(e.target.value))}

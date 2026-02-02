@@ -1,12 +1,14 @@
 import {NextRequest, NextResponse} from 'next/server';
 import {SearchResponse} from '@/app/types/media';
 import {search} from '@/app/lib/search-index';
+import {SortByParameter} from "@/app/types/common";
 
 export async function GET(request: NextRequest): Promise<NextResponse<SearchResponse>> {
   const query = request.nextUrl.searchParams.get('q') || '';
   const photographer = request.nextUrl.searchParams.get('photographer') || '';
   const dateStart = request.nextUrl.searchParams.get('dateStart') || '';
   const dateEnd = request.nextUrl.searchParams.get('dateEnd') || '';
+  const sortBy = request.nextUrl.searchParams.get('sortBy') as SortByParameter | null;
   const page = Math.max(1, parseInt(request.nextUrl.searchParams.get('page') || '1'));
   const pageSize = Math.min(100, Math.max(1, parseInt(request.nextUrl.searchParams.get('pageSize') || '20')));
 
@@ -14,7 +16,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<SearchResp
     query,
     photographer || undefined,
     dateStart || undefined,
-    dateEnd || undefined
+    dateEnd || undefined,
+    sortBy || undefined
   );
   const total = allResults.length;
   const totalPages = Math.ceil(total / pageSize);

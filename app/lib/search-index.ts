@@ -1,6 +1,7 @@
 import {RawMediaItem, MediaItem} from '../types/media';
 import {tokenize} from './tokenizer';
 import mediaData from '../data/media.json';
+import {SortByParameter} from "@/app/types/common";
 
 type FieldIndex = { [token: string]: number[] };
 
@@ -130,7 +131,8 @@ export function search(
   query: string,
   photographerFilter?: string,
   dateStart?: string,
-  dateEnd?: string
+  dateEnd?: string,
+  sortBy?: SortByParameter,
 ): MediaItem[] {
   const tokens = tokenize(query);
   if (tokens.length === 0) {
@@ -181,15 +183,26 @@ export function search(
   }
 
   /*
-   * Step 3: Sort by score descending
+   * Step 3: Sort results
    */
-  const results = [...scores.entries()]
-    .sort((a, b) => b[1] - a[1])
+  const sortedResults = [...scores.entries()];
+  if (sortBy === 'date_asc' || sortBy === 'date_desc') {
+    sortedResults.sort((a, b) => {
+      const dateA = normalizedDates[a[0]];
+      const dateB = normalizedDates[b[0]];
+      return sortBy === 'date_asc'
+        ? dateA.localeCompare(dateB)
+        : dateB.localeCompare(dateA);
+    });
+  } else {
+    // Default: sort by score descending
+    sortedResults.sort((a, b) => b[1] - a[1]);
+  }
 
   /*
    * Step 4: Convert to data structure
    */
-  let mediaItems = results.map(([docId, score]) => toMediaItem(docId, score));
+  let mediaItems = sortedResults.map(([docId, score]) => toMediaItem(docId, score));
 
   /*
    * Step 5: Apply photographer filter
