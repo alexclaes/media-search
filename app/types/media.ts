@@ -16,6 +16,7 @@ export interface MediaItem {
   date: string;
   height: string;
   width: string;
+  _score: number;
 }
 
 export interface SearchResponse {

@@ -50,6 +50,7 @@ export default function Search() {
             <p><span className="font-bold">datum:</span> {item.date}</p>
             <p><span className="font-bold">Breite x Höhe:</span> {item.width}x{item.height}</p>
             <p><span className="font-bold">Suchtext:</span> {item.searchText}</p>
+            <p><span className="font-bold">Score:</span> {item._score}</p>
             <hr/>
           </li>
         ))}

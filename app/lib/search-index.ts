@@ -10,7 +10,6 @@ export interface TokenMap {
 // Type assertion for imported JSON
 const rawMedia = mediaData as RawMediaItem[];
 
-
 function buildIndex(): TokenMap {
   const index: TokenMap = {
     meta: {docCount: rawMedia.length},
@@ -32,15 +31,29 @@ function buildIndex(): TokenMap {
   return index;
 }
 
-function toMediaItem(raw: RawMediaItem): MediaItem {
+function toMediaItem(raw: RawMediaItem, score: number): MediaItem {
   return {
     id: raw.bildnummer,
     searchText: raw.suchtext,
     photographer: raw.fotografen,
     date: raw.datum,
     height: raw.hoehe,
-    width: raw.breite
+    width: raw.breite,
+    _score: score
   };
+}
+
+/**
+ * Calculate IDF (Inverse Document Frequency)
+ * IDF = log(N / df) where N = total docs, df = docs containing term
+ * Rare terms get higher scores
+ */
+function calculateIDF(token: string): number {
+  const docs = index.suchtext[token];
+  if (!docs || docs.length === 0) {
+    return 0;
+  }
+  return Math.log(index.meta.docCount / docs.length);
 }
 
 // Build index at startup
@@ -52,7 +65,9 @@ export function search(query: string): MediaItem[] {
     return [];
   }
 
-
+  /*
+   * Step 1: Find docs
+   */
   // Get all docs containing the first token
   let resultSet = new Set(index.suchtext[tokens[0]] || []);
 
@@ -62,6 +77,20 @@ export function search(query: string): MediaItem[] {
     resultSet = new Set([...resultSet].filter(id => tokenDocs.has(id)));
   }
 
-  // Convert to MediaItem array
-  return [...resultSet].map(docId => toMediaItem(rawMedia[docId]));
+  /*
+   * Step 2: Calculate IDF score for each matching doc
+   */
+  const idfScores = tokens.map(token => calculateIDF(token));
+  const totalScore = idfScores.reduce((sum, idf) => sum + idf, 0);
+
+  const results = [...resultSet].map(docId =>
+    toMediaItem(rawMedia[docId], totalScore)
+  );
+
+  /*
+   * Step 3: Sort by score descending
+   */
+  results.sort((a, b) => b._score - a._score);
+
+  return results;
 }
