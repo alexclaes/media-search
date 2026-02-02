@@ -42,6 +42,8 @@ export default function Search() {
   const [total, setTotal] = useState(0);
   const [pageSize, setPageSize] = useState(20);
   const [photographer, setPhotographer] = useState('');
+  const [dateStart, setDateStart] = useState('');
+  const [dateEnd, setDateEnd] = useState('');
 
 
   useEffect(() => {
@@ -61,6 +63,12 @@ export default function Search() {
         if (photographer) {
           url += `&photographer=${encodeURIComponent(photographer)}`;
         }
+        if (dateStart) {
+          url += `&dateStart=${encodeURIComponent(dateStart)}`;
+        }
+        if (dateEnd) {
+          url += `&dateEnd=${encodeURIComponent(dateEnd)}`;
+        }
         const response = await fetch(url);
 
         if (!response.ok) {
@@ -79,7 +87,7 @@ export default function Search() {
     }
 
     performSearch();
-  }, [submittedQuery, page, pageSize, photographer]);
+  }, [submittedQuery, page, pageSize, photographer, dateStart, dateEnd]);
 
   function handleSearch() {
     setSubmittedQuery(query);
@@ -93,6 +101,12 @@ export default function Search() {
 
   function handlePhotographerChange(newPhotographer: string) {
     setPhotographer(newPhotographer);
+    setPage(1);
+  }
+
+  function handleDateChange(start: string, end: string) {
+    setDateStart(start);
+    setDateEnd(end);
     setPage(1);
   }
 
@@ -114,6 +128,18 @@ export default function Search() {
           <option value="">Alle Fotografen</option>
           {photographers.map(p => <option key={p} value={p}>{p}</option>)}
         </select>
+        <input
+          type="date"
+          value={dateStart}
+          onChange={(e) => handleDateChange(e.target.value, dateEnd)}
+          disabled={loading}
+        />
+        <input
+          type="date"
+          value={dateEnd}
+          onChange={(e) => handleDateChange(dateStart, e.target.value)}
+          disabled={loading}
+        />
         <select
           value={pageSize}
           onChange={(e) => handlePageSizeChange(Number(e.target.value))}

@@ -126,7 +126,12 @@ function getDocsForTokens(tokens: string[]): Set<number> {
 }
 
 
-export function search(query: string, photographerFilter?: string): MediaItem[] {
+export function search(
+  query: string,
+  photographerFilter?: string,
+  dateStart?: string,
+  dateEnd?: string
+): MediaItem[] {
   const tokens = tokenize(query);
   if (tokens.length === 0) {
     return [];
@@ -191,6 +196,16 @@ export function search(query: string, photographerFilter?: string): MediaItem[] 
    */
   if (photographerFilter) {
     mediaItems = mediaItems.filter(item => item.photographer === photographerFilter);
+  }
+
+  /*
+   * Step 6: Apply date range filter
+   */
+  if (dateStart) {
+    mediaItems = mediaItems.filter(item => item.date >= dateStart);
+  }
+  if (dateEnd) {
+    mediaItems = mediaItems.filter(item => item.date <= dateEnd);
   }
 
   return mediaItems;
