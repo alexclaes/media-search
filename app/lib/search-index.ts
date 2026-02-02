@@ -26,6 +26,12 @@ type IndexedField = keyof typeof FIELD_WEIGHTS;
 // Type assertion for imported JSON
 const rawMedia = mediaData as RawMediaItem[];
 
+function normalizeDate(dateStr: string): string {
+  const [day, month, year] = dateStr.split('.').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+  return date.toISOString().split('T')[0];
+}
+
 function addToFieldIndex(fieldIndex: FieldIndex, tokens: string[], docId: number): void {
   for (const token of tokens) {
     if (!fieldIndex[token]) {
@@ -72,16 +78,20 @@ export const index = buildIndex();
 // Build an array containing all tokens at startup (for substring matching)
 const allTokens = buildAllTokens();
 
+// Normalize dates at startup (parallel array to rawMedia)
+const normalizedDates = rawMedia.map(item => normalizeDate(item.datum));
+
 // ---------------------------------------------------------------------------------------------------------------------
 // Relevant for run time (on every search request)
 // ---------------------------------------------------------------------------------------------------------------------
 
-function toMediaItem(raw: RawMediaItem, score: number): MediaItem {
+function toMediaItem(docId: number, score: number): MediaItem {
+  const raw = rawMedia[docId];
   return {
     id: raw.bildnummer,
     searchText: raw.suchtext,
     photographer: raw.fotografen,
-    date: raw.datum,
+    date: normalizedDates[docId],
     height: raw.hoehe,
     width: raw.breite,
     _score: score
@@ -174,7 +184,7 @@ export function search(query: string, photographerFilter?: string): MediaItem[] 
   /*
    * Step 4: Convert to data structure
    */
-  let mediaItems = results.map(([docId, score]) => toMediaItem(rawMedia[docId], score));
+  let mediaItems = results.map(([docId, score]) => toMediaItem(docId, score));
 
   /*
    * Step 5: Apply photographer filter
