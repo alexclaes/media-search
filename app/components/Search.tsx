@@ -1,10 +1,30 @@
 'use client';
 
-import {useState} from 'react';
+import {useState, useEffect} from 'react';
 import {MediaItem, SearchResponse} from '@/app/types/media';
+
+// For the sake of this demo we store all photographers hardcoded in the UI
+const photographers = [
+  'IMAGO / Action Pictures',
+  'IMAGO / Eibner-Pressefoto',
+  'IMAGO / Future Image',
+  'IMAGO / NurPhoto',
+  'IMAGO / Panthermedia',
+  'IMAGO / Reporters',
+  'IMAGO / Steinach',
+  'IMAGO / Sven Simon',
+  'IMAGO / United Archives International',
+  'IMAGO / Westend61',
+  'IMAGO / Xinhua',
+  'IMAGO / ZUMA Press',
+  'IMAGO / blickwinkel',
+  'IMAGO / imagebroker',
+  'IMAGO / teutopress',
+];
 
 export default function Search() {
   const [query, setQuery] = useState('');
+  const [submittedQuery, setSubmittedQuery] = useState<string | null>(null);
   const [results, setResults] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -12,38 +32,59 @@ export default function Search() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [pageSize, setPageSize] = useState(20);
-
-  async function performSearch(searchPage: number, searchPageSize: number = pageSize) {
-    setLoading(true);
-    setError(null);
-
-    window.scrollTo({top: 0, behavior: 'smooth'});
-
-    try {
-      const response = await fetch(`/api/search?q=${encodeURIComponent(query)}&page=${searchPage}&pageSize=${searchPageSize}`);
-      if (!response.ok) throw new Error('Suche fehlgeschlagen');
-      const data: SearchResponse = await response.json();
-      setResults(data.items);
-      setPage(data.page);
-      setTotalPages(data.totalPages);
-      setTotal(data.total);
+  const [photographer, setPhotographer] = useState('');
 
 
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unbekannter Fehler');
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (submittedQuery === null) {
+      return;
     }
-  }
+
+    const currentQuery = submittedQuery;
+
+    async function performSearch() {
+      setLoading(true);
+      setError(null);
+      window.scrollTo({top: 0, behavior: 'smooth'});
+
+      try {
+        let url = `/api/search?q=${encodeURIComponent(currentQuery)}&page=${page}&pageSize=${pageSize}`;
+        if (photographer) {
+          url += `&photographer=${encodeURIComponent(photographer)}`;
+        }
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          throw new Error('Suche fehlgeschlagen');
+        }
+
+        const data: SearchResponse = await response.json();
+        setResults(data.items);
+        setTotalPages(data.totalPages);
+        setTotal(data.total);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Unbekannter Fehler');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    performSearch();
+  }, [submittedQuery, page, pageSize, photographer]);
 
   function handleSearch() {
+    setSubmittedQuery(query);
     setPage(1);
-    performSearch(1);
   }
 
   function handlePageSizeChange(newPageSize: number) {
     setPageSize(newPageSize);
-    performSearch(1, newPageSize);
+    setPage(1);
+  }
+
+  function handlePhotographerChange(newPhotographer: string) {
+    setPhotographer(newPhotographer);
+    setPage(1);
   }
 
   return (
@@ -56,6 +97,14 @@ export default function Search() {
           onKeyDown={(e) => e.key === 'Enter' && !loading && handleSearch()}
           placeholder="Suchbegriff..."
         />
+        <select
+          value={photographer}
+          onChange={(e) => handlePhotographerChange(e.target.value)}
+          disabled={loading}
+        >
+          <option value="">Alle Fotografen</option>
+          {photographers.map(p => <option key={p} value={p}>{p}</option>)}
+        </select>
         <select
           value={pageSize}
           onChange={(e) => handlePageSizeChange(Number(e.target.value))}
@@ -95,14 +144,14 @@ export default function Search() {
       {totalPages > 1 && (
         <div className="p-6 flex gap-6 justify-center w-full">
           <button
-            onClick={() => performSearch(page - 1)}
+            onClick={() => setPage(page - 1)}
             disabled={loading || page <= 1}
           >
             Zurück
           </button>
           <select
             value={page}
-            onChange={(e) => performSearch(Number(e.target.value))}
+            onChange={(e) => setPage(Number(e.target.value))}
             disabled={loading}
           >
             {Array.from({length: totalPages}, (_, i) => i + 1).map((p) => (
@@ -112,7 +161,7 @@ export default function Search() {
             ))}
           </select>
           <button
-            onClick={() => performSearch(page + 1)}
+            onClick={() => setPage(page + 1)}
             disabled={loading || page >= totalPages}
           >
             Weiter

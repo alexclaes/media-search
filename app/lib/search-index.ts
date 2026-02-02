@@ -116,7 +116,7 @@ function getDocsForTokens(tokens: string[]): Set<number> {
 }
 
 
-export function search(query: string): MediaItem[] {
+export function search(query: string, photographerFilter?: string): MediaItem[] {
   const tokens = tokenize(query);
   if (tokens.length === 0) {
     return [];
@@ -174,5 +174,18 @@ export function search(query: string): MediaItem[] {
   /*
    * Step 4: Convert to data structure
    */
-  return results.map(([docId, score]) => toMediaItem(rawMedia[docId], score));
+  let mediaItems = results.map(([docId, score]) => toMediaItem(rawMedia[docId], score));
+
+  /*
+   * Step 5: Apply photographer filter
+   */
+  if (photographerFilter) {
+    mediaItems = mediaItems.filter(item => item.photographer === photographerFilter);
+  }
+
+  return mediaItems;
+}
+
+export function getPhotographers(): string[] {
+  return [...new Set(rawMedia.map(item => item.fotografen))].sort();
 }
