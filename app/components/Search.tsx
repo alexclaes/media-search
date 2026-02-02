@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { MediaItem, SearchResponse } from '@/app/types/media';
+import {useState} from 'react';
+import {MediaItem, SearchResponse} from '@/app/types/media';
 
 export default function Search() {
   const [query, setQuery] = useState('');
@@ -50,7 +50,7 @@ export default function Search() {
             <p><span className="font-bold">datum:</span> {item.date}</p>
             <p><span className="font-bold">Breite x Höhe:</span> {item.width}x{item.height}</p>
             <p><span className="font-bold">Suchtext:</span> {item.searchText}</p>
-            <hr />
+            <hr/>
           </li>
         ))}
       </ul>
