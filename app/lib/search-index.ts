@@ -138,20 +138,27 @@ export function search(query: string): MediaItem[] {
   }
 
   /*
-   * Step 2: Calculate IDF score for each matching doc
+   * Step 2: Calculate IDF score
    * Multiply IDF by weight based on field containing the token
-   * Score = sum of (IDF * fieldWeight) for each token/field match
+   * Multiply IDF by similarity: queryTokenLength / matchedTokenLength (1.0 = exact, <1 = partial)
+   * Score = sum of (IDF * fieldWeight * similarity) for each token/field match
    */
-  const allMatchedTokens = [...new Set(matches.flat())];
   const scores = new Map<number, number>();
 
   for (const docId of resultSet) {
     let score = 0;
-    for (const token of allMatchedTokens) {
-      for (const field of Object.keys(FIELD_WEIGHTS) as IndexedField[]) {
-        const fieldDocs = index[field][token] || [];
-        if (fieldDocs.includes(docId)) {
-          score += calculateIDF(field, token) * FIELD_WEIGHTS[field];
+    for (let i = 0; i < tokens.length; i++) {
+      const queryToken = tokens[i];
+      const matchingTokens = matches[i];
+
+      for (const token of matchingTokens) {
+        const similarity = queryToken.length / token.length;
+
+        for (const field of Object.keys(FIELD_WEIGHTS) as IndexedField[]) {
+          const fieldDocs = index[field][token] || [];
+          if (fieldDocs.includes(docId)) {
+            score += calculateIDF(field, token) * FIELD_WEIGHTS[field] * similarity;
+          }
         }
       }
     }
