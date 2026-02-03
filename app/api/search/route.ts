@@ -9,6 +9,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<SearchResp
   const dateStart = request.nextUrl.searchParams.get('dateStart') || '';
   const dateEnd = request.nextUrl.searchParams.get('dateEnd') || '';
   const sortBy = request.nextUrl.searchParams.get('sortBy') as SortByParameter | null;
+  const publicationCountriesParam = request.nextUrl.searchParams.get('publicationCountries');
+  const publicationCountries = publicationCountriesParam ? publicationCountriesParam.split(',').filter(Boolean) : undefined;
   const page = Math.max(1, parseInt(request.nextUrl.searchParams.get('page') || '1'));
   const pageSize = Math.min(100, Math.max(1, parseInt(request.nextUrl.searchParams.get('pageSize') || '20')));
 
@@ -17,7 +19,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<SearchResp
     photographer || undefined,
     dateStart || undefined,
     dateEnd || undefined,
-    sortBy || undefined
+    sortBy || undefined,
+    publicationCountries
   );
   const total = allResults.length;
   const totalPages = Math.ceil(total / pageSize);

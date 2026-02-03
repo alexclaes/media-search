@@ -113,6 +113,7 @@ function toMediaItem(docId: number, score: number): MediaItem {
     date: normalizedDates[docId],
     height: raw.hoehe,
     width: raw.breite,
+    publicationRestrictionCountries: publicationRestrictionCountries[docId],
     _score: score
   };
 }
@@ -151,6 +152,7 @@ export function search(
   dateStart?: string,
   dateEnd?: string,
   sortBy?: SortByParameter,
+  publicationCountriesFilter?: string[]  // e.g., ['GER', 'FRA'] - AND logic
 ): MediaItem[] {
   const tokens = tokenize(query);
   if (tokens.length === 0) {
@@ -237,6 +239,15 @@ export function search(
   }
   if (dateEnd) {
     mediaItems = mediaItems.filter(item => item.date <= dateEnd);
+  }
+
+  /*
+   * Step 7: Apply publication countries filter (AND logic - match all)
+   */
+  if (publicationCountriesFilter && publicationCountriesFilter.length > 0) {
+    mediaItems = mediaItems.filter(item =>
+      publicationCountriesFilter.every(country => item.publicationRestrictionCountries.includes(country) || item.publicationRestrictionCountries.length === 0)
+    );
   }
 
   return mediaItems;

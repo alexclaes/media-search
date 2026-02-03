@@ -16,6 +16,7 @@ export interface MediaItem {
   date: string;
   height: string;
   width: string;
+  publicationRestrictionCountries: string[];
   _score: number;
 }
 

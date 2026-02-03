@@ -23,6 +23,26 @@ const photographers = [
   'IMAGO / teutopress',
 ];
 
+// For the sake of this demo we store all publication countries are hardcoded in the UI
+const PUBLICATION_COUNTRY_OPTIONS = [
+  {code: 'GER', label: 'Deutschland'},
+  {code: 'AUT', label: 'Österreich'},
+  {code: 'SUI', label: 'Schweiz'},
+  {code: 'FRA', label: 'Frankreich'},
+  {code: 'BEL', label: 'Belgien'},
+  {code: 'NED', label: 'Niederlande'},
+  {code: 'GBR', label: 'Großbritannien'},
+  {code: 'IRL', label: 'Irland'},
+  {code: 'ITA', label: 'Italien'},
+  {code: 'ESP', label: 'Spanien'},
+  {code: 'POR', label: 'Portugal'},
+  {code: 'POL', label: 'Polen'},
+  {code: 'CZE', label: 'Tschechien'},
+  {code: 'SWE', label: 'Schweden'},
+  {code: 'NOR', label: 'Norwegen'},
+  {code: 'DEN', label: 'Dänemark'},
+];
+
 const formatDate = (date: string) => {
   return new Date(date).toLocaleDateString("de-DE", {
     weekday: "short",
@@ -46,6 +66,7 @@ export default function Search() {
   const [dateStart, setDateStart] = useState('');
   const [dateEnd, setDateEnd] = useState('');
   const [sortBy, setSortBy] = useState<SortByParameter>('score');
+  const [selectedPublicationCountries, setSelectedPublicationCountries] = useState<string[]>([]);
 
 
   useEffect(() => {
@@ -74,6 +95,9 @@ export default function Search() {
         if (sortBy !== 'score') {
           url += `&sortBy=${encodeURIComponent(sortBy)}`;
         }
+        if (selectedPublicationCountries.length > 0) {
+          url += `&publicationCountries=${encodeURIComponent(selectedPublicationCountries.join(','))}`;
+        }
         const response = await fetch(url);
 
         if (!response.ok) {
@@ -92,7 +116,7 @@ export default function Search() {
     }
 
     performSearch();
-  }, [submittedQuery, page, pageSize, photographer, dateStart, dateEnd, sortBy]);
+  }, [submittedQuery, page, pageSize, photographer, dateStart, dateEnd, sortBy, selectedPublicationCountries]);
 
   function handleSearch() {
     setSubmittedQuery(query);
@@ -117,6 +141,15 @@ export default function Search() {
 
   function handleSortChange(newSort: SortByParameter) {
     setSortBy(newSort);
+    setPage(1);
+  }
+
+  function handlePublicationCountryToggle(code: string) {
+    setSelectedPublicationCountries(prev =>
+      prev.includes(code)
+        ? prev.filter(c => c !== code)
+        : [...prev, code]
+    );
     setPage(1);
   }
 
@@ -173,6 +206,21 @@ export default function Search() {
         </button>
       </div>
 
+      <div>
+        <span>Veröffentlichung zulässig in:</span>
+        {PUBLICATION_COUNTRY_OPTIONS.map(({code, label}) => (
+          <label key={code}>
+            <input
+              type="checkbox"
+              checked={selectedPublicationCountries.includes(code)}
+              onChange={() => handlePublicationCountryToggle(code)}
+              disabled={loading}
+            />
+            {label}
+          </label>
+        ))}
+      </div>
+
       {error && <p>Error: {error}</p>}
 
       {total > 0 && (
@@ -192,6 +240,18 @@ export default function Search() {
             <p><span className="font-bold">Breite x Höhe:</span> {item.width}x{item.height}</p>
             <p><span className="font-bold">Suchtext:</span> {item.searchText}</p>
             <p><span className="font-bold">Score:</span> {item._score}</p>
+            {item.publicationRestrictionCountries.length > 0 ? (
+              <>
+                <p>
+                  <span className="font-bold">Veröffentlichung beschränkt auf Länder:</span>
+                </p>
+                <ul>
+                  {item.publicationRestrictionCountries
+                    .map(code => PUBLICATION_COUNTRY_OPTIONS.find(c => c.code === code)?.label ?? code)
+                    .map(country => <li key={country}>{country}</li>)}
+                </ul>
+              </>
+            ) : null}
             <hr/>
           </li>
         ))}
