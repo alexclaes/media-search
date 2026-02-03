@@ -252,6 +252,10 @@ export default function Search() {
 
       {error && <p>Error: {error}</p>}
 
+      {submittedQuery !== null && !loading && total === 0 && (
+        <p>Keine Ergebnisse gefunden.</p>
+      )}
+
       {total > 0 && (
         <p>
           Zeige Ergebnisse {(page - 1) * pageSize + 1} bis {Math.min(page * pageSize, total)} von insgesamt {total}
