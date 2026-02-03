@@ -43,6 +43,8 @@ const PUBLICATION_COUNTRY_OPTIONS = [
   {code: 'DEN', label: 'Dänemark'},
 ];
 
+const DEBOUNCE_DELAY = 300;
+
 const formatDate = (date: string) => {
   return new Date(date).toLocaleDateString("de-DE", {
     weekday: "short",
@@ -89,7 +91,22 @@ export default function Search() {
   const [sortBy, setSortBy] = useState<SortByParameter>('score');
   const [selectedPublicationCountries, setSelectedPublicationCountries] = useState<string[]>([]);
 
+  // Debounced search-as-you-type
+  useEffect(() => {
+    // Don't search for very short queries
+    if (query.trim().length < 2) {
+      return
+    }
 
+    const timer = setTimeout(() => {
+      setSubmittedQuery(query);
+      setPage(1);
+    }, DEBOUNCE_DELAY);
+
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  // Call search API when state values change (e.g. submittedQuery, filter or page)
   useEffect(() => {
     if (submittedQuery === null) {
       return;
@@ -139,11 +156,6 @@ export default function Search() {
     performSearch();
   }, [submittedQuery, page, pageSize, photographer, dateStart, dateEnd, sortBy, selectedPublicationCountries]);
 
-  function handleSearch() {
-    setSubmittedQuery(query);
-    setPage(1);
-  }
-
   function handlePageSizeChange(newPageSize: number) {
     setPageSize(newPageSize);
     setPage(1);
@@ -181,7 +193,6 @@ export default function Search() {
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && !loading && handleSearch()}
           placeholder="Suchbegriff..."
         />
         <select
@@ -222,9 +233,6 @@ export default function Search() {
           <option value={50}>50 pro Seite</option>
           <option value={100}>100 pro Seite</option>
         </select>
-        <button onClick={handleSearch} disabled={loading}>
-          {loading ? 'Suche...' : 'Suchen'}
-        </button>
       </div>
 
       <div>
