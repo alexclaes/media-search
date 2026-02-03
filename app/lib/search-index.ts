@@ -21,7 +21,7 @@ const FIELD_WEIGHTS = {
 type IndexedField = keyof typeof FIELD_WEIGHTS;
 
 // ---------------------------------------------------------------------------------------------------------------------
-// Relevant for build time (once, when building)
+// Relevant for cold startup (once, when the serverless function starts)
 // ---------------------------------------------------------------------------------------------------------------------
 
 // Type assertion for imported JSON
@@ -191,6 +191,8 @@ export function search(
   }
 
   // Find all tokens that contain the given substring
+  // Danger !!!
+  // Should be fine with 10k docs, this will not scale at all
   const matches = tokens.map(t => allTokens.filter(token => token.includes(t)));
 
   /*
