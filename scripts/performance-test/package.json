@@ -1,0 +1,11 @@
+{
+  "name": "performance-test",
+  "type": "module",
+  "scripts": {
+    "test": "npx tsx performance-test.ts"
+  },
+  "dependencies": {
+    "@playwright/test": "^1.40.0",
+    "tsx": "^4.7.0"
+  }
+}
