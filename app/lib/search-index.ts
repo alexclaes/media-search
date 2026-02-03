@@ -145,6 +145,37 @@ function getDocsForTokens(tokens: string[]): Set<number> {
   return docs;
 }
 
+function filterByPhotographer(docIds: Set<number>, photographer: string): Set<number> {
+  const result = new Set<number>();
+  for (const docId of docIds) {
+    if (rawMedia[docId].fotografen === photographer) {
+      result.add(docId);
+    }
+  }
+  return result;
+}
+
+function filterByDateRange(docIds: Set<number>, start?: string, end?: string): Set<number> {
+  const result = new Set<number>();
+  for (const docId of docIds) {
+    const date = normalizedDates[docId];
+    if ((!start || date >= start) && (!end || date <= end)) {
+      result.add(docId);
+    }
+  }
+  return result;
+}
+
+function filterByPublicationCountries(docIds: Set<number>, countries: string[]): Set<number> {
+  const result = new Set<number>();
+  for (const docId of docIds) {
+    const restrictions = publicationRestrictionCountries[docId];
+    if (restrictions.length === 0 || countries.every(c => restrictions.includes(c))) {
+      result.add(docId);
+    }
+  }
+  return result;
+}
 
 export function search(
   query: string,
@@ -175,7 +206,20 @@ export function search(
   }
 
   /*
-   * Step 2: Calculate IDF score
+   * Step 2: Apply filters early (before scoring and sorting - for performance)
+   */
+  if (photographerFilter) {
+    resultSet = filterByPhotographer(resultSet, photographerFilter);
+  }
+  if (dateStart || dateEnd) {
+    resultSet = filterByDateRange(resultSet, dateStart, dateEnd);
+  }
+  if (publicationCountriesFilter && publicationCountriesFilter.length > 0) {
+    resultSet = filterByPublicationCountries(resultSet, publicationCountriesFilter);
+  }
+
+  /*
+   * Step 3: Calculate IDF score
    * Multiply IDF by weight based on field containing the token
    * Multiply IDF by similarity: queryTokenLength / matchedTokenLength (1.0 = exact, <1 = partial)
    * Score = sum of (IDF * fieldWeight * similarity) for each token/field match
@@ -203,7 +247,7 @@ export function search(
   }
 
   /*
-   * Step 3: Sort results
+   * Step 4: Sort results
    */
   const sortedResults = [...scores.entries()];
   if (sortBy === 'date_asc' || sortBy === 'date_desc') {
@@ -220,37 +264,9 @@ export function search(
   }
 
   /*
-   * Step 4: Convert to data structure
+   * Step 5: Convert to data structure and return
    */
-  let mediaItems = sortedResults.map(([docId, score]) => toMediaItem(docId, score));
-
-  /*
-   * Step 5: Apply photographer filter
-   */
-  if (photographerFilter) {
-    mediaItems = mediaItems.filter(item => item.photographer === photographerFilter);
-  }
-
-  /*
-   * Step 6: Apply date range filter
-   */
-  if (dateStart) {
-    mediaItems = mediaItems.filter(item => item.date >= dateStart);
-  }
-  if (dateEnd) {
-    mediaItems = mediaItems.filter(item => item.date <= dateEnd);
-  }
-
-  /*
-   * Step 7: Apply publication countries filter (AND logic - match all)
-   */
-  if (publicationCountriesFilter && publicationCountriesFilter.length > 0) {
-    mediaItems = mediaItems.filter(item =>
-      publicationCountriesFilter.every(country => item.publicationRestrictionCountries.includes(country) || item.publicationRestrictionCountries.length === 0)
-    );
-  }
-
-  return mediaItems;
+  return sortedResults.map(([docId, score]) => toMediaItem(docId, score));
 }
 
 export function getPhotographers(): string[] {
