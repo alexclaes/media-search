@@ -71,7 +71,7 @@ function highlightMatches(text: string, query: string | null): React.ReactNode {
   return tokens.map((token, i) => {
     const tokenLowerCase = token.toLowerCase();
     const isMatch = terms.some(term => tokenLowerCase.includes(term));
-    return isMatch ? <mark key={i}>{token}</mark> : token;
+    return isMatch ? <mark className="bg-yellow-300" key={i}>{token}</mark> : token;
   });
 }
 
@@ -192,118 +192,159 @@ export default function Search() {
   }
 
   return (
-    <div>
-      <div>
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && !loading && handleSearch()}
-          placeholder="Suchbegriff..."
-        />
-        <select
-          value={photographer}
-          onChange={(e) => handlePhotographerChange(e.target.value)}
-          disabled={loading}
-        >
-          <option value="">Alle Fotografen</option>
-          {photographers.map(p => <option key={p} value={p}>{p}</option>)}
-        </select>
-        <input
-          type="date"
-          value={dateStart}
-          onChange={(e) => handleDateChange(e.target.value, dateEnd)}
-          disabled={loading}
-        />
-        <input
-          type="date"
-          value={dateEnd}
-          onChange={(e) => handleDateChange(dateStart, e.target.value)}
-          disabled={loading}
-        />
-        <select
-          value={sortBy}
-          onChange={(e) => handleSortChange(e.target.value as SortByParameter)}
-          disabled={loading}
-        >
-          <option value="score">Sortieren nach Relevanz</option>
-          <option value="date_desc">Neueste zuerst</option>
-          <option value="date_asc">Älteste zuerst</option>
-        </select>
-        <select
-          value={pageSize}
-          onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-          disabled={loading}
-        >
-          <option value={20}>20 pro Seite</option>
-          <option value={50}>50 pro Seite</option>
-          <option value={100}>100 pro Seite</option>
-        </select>
-        <button type="submit" onClick={handleSearch} disabled={loading}>
-          {loading ? 'Suche...' : 'Suchen'}
-        </button>
-      </div>
+    <div className="min-h-screen flex flex-col">
+      <div className="bg-white dark:bg-gray-800 p-6 space-y-4">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && !loading && handleSearch()}
+            placeholder="Suchbegriff..."
+            className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700"
+          />
+          <button
+            type="submit"
+            onClick={handleSearch}
+            disabled={loading}
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Suche...' : 'Suchen'}
+          </button>
+        </div>
 
-      <div>
-        <span>Veröffentlichung zulässig in:</span>
-        {PUBLICATION_COUNTRY_OPTIONS.map(({code, label}) => (
-          <label key={code}>
+        <div className="flex flex-wrap gap-3">
+          <select
+            value={photographer}
+            onChange={(e) => handlePhotographerChange(e.target.value)}
+            disabled={loading}
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700"
+          >
+            <option value="">Alle Fotografen</option>
+            {photographers.map(p => <option key={p} value={p}>{p}</option>)}
+          </select>
+          <div className="flex items-center gap-2">
+            <span className="text-sm">Von:</span>
             <input
-              type="checkbox"
-              checked={selectedPublicationCountries.includes(code)}
-              onChange={() => handlePublicationCountryToggle(code)}
+              type="date"
+              value={dateStart}
+              onChange={(e) => handleDateChange(e.target.value, dateEnd)}
               disabled={loading}
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700"
             />
-            {label}
-          </label>
-        ))}
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm">Bis:</span>
+            <input
+              type="date"
+              value={dateEnd}
+              onChange={(e) => handleDateChange(dateStart, e.target.value)}
+              disabled={loading}
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700"
+            />
+          </div>
+          <select
+            value={sortBy}
+            onChange={(e) => handleSortChange(e.target.value as SortByParameter)}
+            disabled={loading}
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700"
+          >
+            <option value="score">Sortieren nach Relevanz</option>
+            <option value="date_desc">Neueste zuerst</option>
+            <option value="date_asc">Älteste zuerst</option>
+          </select>
+          <select
+            value={pageSize}
+            onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+            disabled={loading}
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700"
+          >
+            <option value={20}>20 pro Seite</option>
+            <option value={50}>50 pro Seite</option>
+            <option value={100}>100 pro Seite</option>
+          </select>
+        </div>
+
+        <div>
+          <h3 className="text-sm font-semibold mb-2">Veröffentlichung zulässig in:</h3>
+          <div className="flex flex-wrap gap-x-4 gap-y-1">
+            {PUBLICATION_COUNTRY_OPTIONS.map(({code, label}) => (
+              <label key={code} className="flex items-center gap-1 text-sm">
+                <input
+                  type="checkbox"
+                  checked={selectedPublicationCountries.includes(code)}
+                  onChange={() => handlePublicationCountryToggle(code)}
+                  disabled={loading}
+                  className="rounded"
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+        </div>
       </div>
 
       {error && <p>Error: {error}</p>}
 
       {submittedQuery !== null && !loading && total === 0 && (
-        <p>Keine Ergebnisse gefunden.</p>
+        <p className="p-4">Keine Ergebnisse gefunden.</p>
       )}
 
-      {total > 0 && (
-        <p>
-          Zeige Ergebnisse {(page - 1) * pageSize + 1} bis {Math.min(page * pageSize, total)} von insgesamt {total}
-        </p>
-      )}
+      <div className="p-4 flex-1">
+        {total > 0 && (
+          <p className="mb-4">
+            Zeige Ergebnisse {(page - 1) * pageSize + 1} bis {Math.min(page * pageSize, total)} von insgesamt {total}
+          </p>
+        )}
 
-      <ul>
-        {results.map((item) => (
-          <li key={item.id}>
-            <p><span className="font-bold">Bildnummer:</span> {highlightMatches(item.id, submittedQuery)}</p>
-            <p><span className="font-bold">Fotografen:</span> {highlightMatches(item.photographer, submittedQuery)}</p>
-            <p><span className="font-bold">Datum:</span>
-              <time dateTime={item.date}>{formatDate(item.date)}</time>
-            </p>
-            <p><span className="font-bold">Breite x Höhe:</span> {item.width}x{item.height}</p>
-            <p><span className="font-bold">Suchtext:</span> {highlightMatches(item.searchText, submittedQuery)}</p>
-            <p><span className="font-bold">Score:</span> {item._score}</p>
-            {item.publicationRestrictionCountries.length > 0 ? (
-              <>
-                <p>
-                  <span className="font-bold">Veröffentlichung beschränkt auf Länder:</span>
-                </p>
-                <ul>
-                  {item.publicationRestrictionCountries
-                    .map(code => PUBLICATION_COUNTRY_OPTIONS.find(c => c.code === code)?.label ?? code)
-                    .map(country => <li key={country}>{country}</li>)}
-                </ul>
-              </>
-            ) : null}
-            <hr/>
-          </li>
-        ))}
-      </ul>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {results.map((item) => (
+            <div key={item.id} className="bg-white dark:bg-gray-800 p-4 rounded space-y-3">
+              <p className="text-sm">{highlightMatches(item.searchText, submittedQuery)}</p>
+
+              <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
+                <dt className="font-semibold">Bildnummer</dt>
+                <dd>{highlightMatches(item.id, submittedQuery)}</dd>
+                <dt className="font-semibold">Fotografen</dt>
+                <dd>{highlightMatches(item.photographer, submittedQuery)}</dd>
+                <dt className="font-semibold">Datum</dt>
+                <dd>
+                  <time dateTime={item.date}>{formatDate(item.date)}</time>
+                </dd>
+                <dt className="font-semibold">Größe</dt>
+                <dd>{item.width} x {item.height}</dd>
+                <dt className="font-semibold">Score</dt>
+                <dd>{item._score}</dd>
+              </dl>
+
+              {item.publicationRestrictionCountries.length > 0 && (
+                <div>
+                  <p className="text-sm font-semibold mb-2">Veröffentlichung beschränkt auf Länder:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {item.publicationRestrictionCountries
+                      .map(code => PUBLICATION_COUNTRY_OPTIONS.find(c => c.code === code)?.label ?? code)
+                      .map(country => (
+                        <span
+                          key={country}
+                          className="inline-block px-2 py-0.5 text-xs bg-gray-200 dark:bg-gray-600 rounded-full"
+                        >
+                          {country}
+                        </span>
+                      ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
 
       {totalPages > 1 && (
-        <div className="p-6 flex gap-6 justify-center w-full">
+        <div className="bg-white dark:bg-gray-800 p-6 flex gap-6 justify-center w-full">
           <button
             onClick={() => setPage(page - 1)}
             disabled={loading || page <= 1}
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
             Zurück
           </button>
@@ -321,6 +362,7 @@ export default function Search() {
           <button
             onClick={() => setPage(page + 1)}
             disabled={loading || page >= totalPages}
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
             Weiter
           </button>

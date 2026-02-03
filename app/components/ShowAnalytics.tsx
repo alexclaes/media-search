@@ -10,7 +10,7 @@ export default function ShowAnalytics() {
   return (
     <button
       onClick={handleClick}
-      className="fixed bottom-4 right-4 px-4 py-2"
+      className="fixed bottom-4 right-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
     >
       Show Analytics
     </button>
