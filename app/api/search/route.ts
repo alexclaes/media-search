@@ -2,8 +2,10 @@ import {NextRequest, NextResponse} from 'next/server';
 import {SearchResponse} from '@/app/types/media';
 import {search} from '@/app/lib/search-index';
 import {SortByParameter} from "@/app/types/common";
+import {recordSearch} from '@/app/lib/analytics';
 
 export async function GET(request: NextRequest): Promise<NextResponse<SearchResponse>> {
+  const startTime = performance.now();
   const query = request.nextUrl.searchParams.get('q') || '';
   const photographer = request.nextUrl.searchParams.get('photographer') || '';
   const dateStart = request.nextUrl.searchParams.get('dateStart') || '';
@@ -34,6 +36,9 @@ export async function GET(request: NextRequest): Promise<NextResponse<SearchResp
     total,
     totalPages
   };
+
+  const responseTime = performance.now() - startTime;
+  recordSearch(query, responseTime);
 
   return NextResponse.json(response);
 }
