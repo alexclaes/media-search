@@ -33,6 +33,21 @@ function normalizeDate(dateStr: string): string {
   return date.toISOString().split('T')[0];
 }
 
+const PUBLICATION_RESTRICTION_REGEX = /PUBLICATIONxINx((?:[A-Z]{3}x)+)ONLY/;
+
+function extractPublicationCountriesRestrictions(suchtext: string): string[] {
+  const match = suchtext.match(PUBLICATION_RESTRICTION_REGEX);
+  if (!match) {
+    return [];
+  }
+  // Extract country codes: "GERxSUIxAUTx" → ['GER', 'SUI', 'AUT']
+  return match[1].split('x').filter(Boolean);
+}
+
+function stripPublicationRestriction(suchtext: string): string {
+  return suchtext.replace(PUBLICATION_RESTRICTION_REGEX, '');
+}
+
 function addToFieldIndex(fieldIndex: FieldIndex, tokens: string[], docId: number): void {
   for (const token of tokens) {
     if (!fieldIndex[token]) {
@@ -53,7 +68,7 @@ function buildIndex(): TokenMap {
   };
 
   rawMedia.forEach((item, docId) => {
-    addToFieldIndex(index.suchtext, tokenize(item.suchtext), docId);
+    addToFieldIndex(index.suchtext, tokenize(stripPublicationRestriction(item.suchtext)), docId);
     addToFieldIndex(index.fotografen, tokenize(item.fotografen), docId);
     addToFieldIndex(index.bildnummer, tokenize(item.bildnummer), docId);
   });
@@ -79,8 +94,11 @@ export const index = buildIndex();
 // Build an array containing all tokens at startup (for substring matching)
 const allTokens = buildAllTokens();
 
-// Normalize dates at startup (parallel array to rawMedia)
+// Normalize dates at startup
 const normalizedDates = rawMedia.map(item => normalizeDate(item.datum));
+
+// Extract allowed countries at startup
+const publicationRestrictionCountries = rawMedia.map(item => extractPublicationCountriesRestrictions(item.suchtext));
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Relevant for run time (on every search request)
