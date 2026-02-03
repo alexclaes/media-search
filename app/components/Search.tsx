@@ -52,6 +52,27 @@ const formatDate = (date: string) => {
   })
 }
 
+function highlightMatches(text: string, query: string | null): React.ReactNode {
+  if (!query?.trim()) {
+    return text;
+  }
+
+  // Filter terms similar to tokenizer, but allow stop word in highlights
+  const terms = query.toLowerCase().split(/\s+/).filter(t => t.length > 1);
+  if (terms.length === 0) {
+    return text;
+  }
+
+  // Split text into words and whitespace, preserving both
+  const tokens = text.split(/(\s+)/);
+
+  return tokens.map((token, i) => {
+    const tokenLowerCase = token.toLowerCase();
+    const isMatch = terms.some(term => tokenLowerCase.includes(term));
+    return isMatch ? <mark key={i}>{token}</mark> : token;
+  });
+}
+
 export default function Search() {
   const [query, setQuery] = useState('');
   const [submittedQuery, setSubmittedQuery] = useState<string | null>(null);
@@ -232,13 +253,13 @@ export default function Search() {
       <ul>
         {results.map((item) => (
           <li key={item.id}>
-            <p><span className="font-bold">Bildnummer:</span> {item.id}</p>
-            <p><span className="font-bold">Fotografen:</span> {item.photographer}</p>
+            <p><span className="font-bold">Bildnummer:</span> {highlightMatches(item.id, submittedQuery)}</p>
+            <p><span className="font-bold">Fotografen:</span> {highlightMatches(item.photographer, submittedQuery)}</p>
             <p><span className="font-bold">Datum:</span>
               <time dateTime={item.date}>{formatDate(item.date)}</time>
             </p>
             <p><span className="font-bold">Breite x Höhe:</span> {item.width}x{item.height}</p>
-            <p><span className="font-bold">Suchtext:</span> {item.searchText}</p>
+            <p><span className="font-bold">Suchtext:</span> {highlightMatches(item.searchText, submittedQuery)}</p>
             <p><span className="font-bold">Score:</span> {item._score}</p>
             {item.publicationRestrictionCountries.length > 0 ? (
               <>
