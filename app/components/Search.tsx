@@ -156,6 +156,11 @@ export default function Search() {
     performSearch();
   }, [submittedQuery, page, pageSize, photographer, dateStart, dateEnd, sortBy, selectedPublicationCountries]);
 
+  function handleSearch() {
+    setSubmittedQuery(query);
+    setPage(1);
+  }
+
   function handlePageSizeChange(newPageSize: number) {
     setPageSize(newPageSize);
     setPage(1);
@@ -193,6 +198,7 @@ export default function Search() {
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && !loading && handleSearch()}
           placeholder="Suchbegriff..."
         />
         <select
@@ -233,6 +239,9 @@ export default function Search() {
           <option value={50}>50 pro Seite</option>
           <option value={100}>100 pro Seite</option>
         </select>
+        <button type="submit" onClick={handleSearch} disabled={loading}>
+          {loading ? 'Suche...' : 'Suchen'}
+        </button>
       </div>
 
       <div>
