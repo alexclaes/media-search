@@ -6,16 +6,11 @@ const path = require('path');
 const TOTAL_ITEMS = 10000;
 const RESTRICTION_RATIO = 1 / 3;
 
-// Restriction patterns (European country combinations)
-const RESTRICTIONS = [
-  'PUBLICATIONxINxGERxSUIxAUTxONLY', // Germany, Switzerland, Austria
-  'PUBLICATIONxINxFRAxBELxSUIxONLY', // France, Belgium, Switzerland
-  'PUBLICATIONxINxGBRxIRLxONLY',     // Great Britain, Ireland
-  'PUBLICATIONxINxESPxPORxONLY',     // Spain, Portugal
-  'PUBLICATIONxINxITAxSUIxONLY',     // Italy, Switzerland
-  'PUBLICATIONxINxNEDxBELxONLY',     // Netherlands, Belgium
-  'PUBLICATIONxINxPOLxCZExONLY',     // Poland, Czech Republic
-  'PUBLICATIONxINxSWExNORxDENxONLY', // Sweden, Norway, Denmark
+// Countries for publication restrictions
+const COUNTRIES = [
+  'GER', 'AUT', 'SUI', 'FRA', 'BEL', 'NED',
+  'GBR', 'IRL', 'ITA', 'ESP', 'POR', 'POL',
+  'CZE', 'SWE', 'NOR', 'DEN'
 ];
 
 // Photographer agencies
@@ -166,16 +161,23 @@ function randomDate() {
   return new Date(year, month, day);
 }
 
+function randomCountryTuple() {
+  // Generate tuple of 2-4 random countries
+  const tupleSize = randomInt(2, 4);
+  const shuffled = [...COUNTRIES].sort(() => Math.random() - 0.5);
+  const selected = shuffled.slice(0, tupleSize);
+  return 'PUBLICATIONxINx' + selected.join('x') + 'xONLY';
+}
+
 function generateBildnummer(index) {
   return String(50000001 + index).padStart(10, '0');
 }
 
-function generateSuchtext(hasRestriction, restrictionIndex) {
+function generateSuchtext(hasRestriction) {
   const categories = Object.keys(SUBJECTS);
   const category = randomElement(categories);
   let text = randomElement(SUBJECTS[category]);
 
-  // Add some variety with additional details
   const additionalDetails = [
     '',
     ' im Stadion',
@@ -189,17 +191,17 @@ function generateSuchtext(hasRestriction, restrictionIndex) {
   text += randomElement(additionalDetails);
 
   if (hasRestriction) {
-    text += ' ' + RESTRICTIONS[restrictionIndex % RESTRICTIONS.length];
+    text += ' ' + randomCountryTuple();
   }
 
   return text;
 }
 
-function generateItem(index, hasRestriction, restrictionIndex) {
+function generateItem(index, hasRestriction) {
   const dims = randomElement(DIMENSIONS);
 
   return {
-    suchtext: generateSuchtext(hasRestriction, restrictionIndex),
+    suchtext: generateSuchtext(hasRestriction),
     bildnummer: generateBildnummer(index),
     fotografen: randomElement(PHOTOGRAPHERS),
     datum: formatDate(randomDate()),
@@ -212,17 +214,11 @@ function generateMediaItems() {
   console.log(`Generating ${TOTAL_ITEMS} media items...`);
 
   const items = [];
-  let restrictionIndex = 0;
 
   for (let i = 0; i < TOTAL_ITEMS; i++) {
     const hasRestriction = Math.random() < RESTRICTION_RATIO;
-
-    const item = generateItem(i, hasRestriction, restrictionIndex);
+    const item = generateItem(i, hasRestriction);
     items.push(item);
-
-    if (hasRestriction) {
-      restrictionIndex++;
-    }
 
     if ((i + 1) % 1000 === 0) {
       console.log(`  Generated ${i + 1} items...`);
@@ -230,7 +226,6 @@ function generateMediaItems() {
   }
 
   console.log(`\nTotal items: ${items.length}`);
-
   return items;
 }
 function writeToFile(items) {
