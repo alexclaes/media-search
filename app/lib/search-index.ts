@@ -202,7 +202,11 @@ export function search(
   // Intersect with remaining tokens (AND logic)
   for (let i = 1; i < matches.length; i++) {
     const tokenDocs = getDocsForTokens(matches[i]);
-    resultSet = new Set([...resultSet].filter(id => tokenDocs.has(id)));
+    for (const id of resultSet) {
+      if (!tokenDocs.has(id)) {
+        resultSet.delete(id);
+      }
+    }
   }
 
   /*
@@ -236,9 +240,12 @@ export function search(
         const similarity = queryToken.length / token.length;
 
         for (const field of Object.keys(FIELD_WEIGHTS) as IndexedField[]) {
-          const fieldDocs = index[field][token] || [];
-          if (fieldDocs.includes(docId)) {
-            score += calculateIDF(field, token) * FIELD_WEIGHTS[field] * similarity;
+          const fieldDocs = index[field][token];
+          if (fieldDocs) {
+            const fieldDocsSet = new Set(fieldDocs);
+            if (fieldDocsSet.has(docId)) {
+              score += calculateIDF(field, token) * FIELD_WEIGHTS[field] * similarity;
+            }
           }
         }
       }
